@@ -691,6 +691,19 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
     
+    // 添加新物品行
+    function addNewItemRow() {
+        // 檢查是否存在清單容器
+        const inventoryItemsList = document.getElementById('inventoryItemsList');
+        if (!inventoryItemsList) {
+            console.error('Cannot find inventoryItemsList element');
+            return;
+        }
+        
+        // 添加新物品
+        addNewItem();
+    }
+    
     // 添加一個初始行
     addNewItemRow();
     
