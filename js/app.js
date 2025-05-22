@@ -693,15 +693,54 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // 添加新物品行
     function addNewItemRow() {
-        // 檢查是否存在清單容器
-        const inventoryItemsList = document.getElementById('inventoryItemsList');
-        if (!inventoryItemsList) {
-            console.error('Cannot find inventoryItemsList element');
+        const tbody = document.querySelector('#itemsTable tbody');
+        if (!tbody) {
+            console.error('Cannot find #itemsTable tbody element');
             return;
         }
         
-        // 添加新物品
-        addNewItem();
+        const newRow = document.createElement('tr');
+        
+        newRow.innerHTML = `
+            <td><input type="text" class="form-control" placeholder="物品名稱" required></td>
+            <td><input type="number" class="form-control" placeholder="數量" min="1" required></td>
+            <td>
+                <select class="form-control">
+                    <option value="良好">良好</option>
+                    <option value="輕微損壞">輕微損壞</option>
+                    <option value="嚴重損壞">嚴重損壞</option>
+                    <option value="不可用">不可用</option>
+                </select>
+            </td>
+            <td><textarea class="form-control" rows="2"></textarea></td>
+            <td class="photo-cell">
+                <button type="button" class="btn btn-outline-primary btn-sm upload-photo-btn">上傳照片</button>
+            </td>
+            <td>
+                <button type="button" class="btn btn-danger btn-sm delete-row-btn">刪除</button>
+            </td>
+        `;
+        
+        tbody.appendChild(newRow);
+        
+        // 為新行添加事件監聽器
+        const uploadBtn = newRow.querySelector('.upload-photo-btn');
+        if (uploadBtn) {
+            uploadBtn.addEventListener('click', function() {
+                currentRow = this.closest('tr');
+                document.getElementById('photoUpload').value = '';
+                document.getElementById('photoPreview').classList.add('d-none');
+                currentPhotoData = null;
+                photoModal.show();
+            });
+        }
+        
+        const deleteBtn = newRow.querySelector('.delete-row-btn');
+        if (deleteBtn) {
+            deleteBtn.addEventListener('click', function() {
+                this.closest('tr').remove();
+            });
+        }
     }
     
     // 添加一個初始行
