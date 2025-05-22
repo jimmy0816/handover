@@ -1,0 +1,56 @@
+/* Main Styles */
+body {
+    font-family: 'Arial', sans-serif;
+    background-color: #f8f9fa;
+}
+
+.container {
+    max-width: 1200px;
+}
+
+/* Signature Pad Styles */
+.signature-pad-container {
+    border: 1px solid #ced4da;
+    border-radius: 4px;
+    position: relative;
+    width: 100%;
+    height: 200px;
+    background-color: #fff;
+}
+
+.signature-pad {
+    width: 100%;
+    height: 100%;
+    cursor: pointer;
+}
+
+/* Photo Preview Styles */
+.photo-preview-container {
+    margin-top: 10px;
+    max-height: 300px;
+    overflow: hidden;
+    text-align: center;
+}
+
+#photoPreview {
+    max-width: 100%;
+    max-height: 300px;
+}
+
+/* Table Styles */
+.table th {
+    background-color: #f1f1f1;
+}
+
+.photo-thumbnail {
+    max-width: 100px;
+    max-height: 100px;
+    cursor: pointer;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .signature-pad-container {
+        height: 150px;
+    }
+}
