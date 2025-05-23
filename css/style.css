@@ -65,7 +65,7 @@ body {
 }
 
 /* Signature Pad Styles */
-.signature-pad-container {
+.signature-container {
     border: 1px solid #ced4da;
     border-radius: 8px;
     position: relative;
@@ -75,13 +75,15 @@ body {
     overflow: hidden;
 }
 
-.signature-pad {
+.signature-container canvas {
     position: absolute;
     top: 0;
     left: 0;
     width: 100% !important;
     height: 100% !important;
     cursor: pointer;
+    touch-action: none;
+    z-index: 10;
 }
 
 /* Photo Styles */
