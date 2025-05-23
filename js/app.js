@@ -561,134 +561,218 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // 生成 PDF
     function generatePDF() {
-        // 先保存當前數據
-        const formData = saveFormData();
-        
-        // 檢查是否有簽名
-        if (!formData.inspectorSignature || !formData.confirmSignature) {
-            alert('請確保雙方都已完成簽名！');
-            return;
-        }
-        
-        // 創建 PDF 內容的 HTML
-        const pdfContent = document.createElement('div');
-        pdfContent.className = 'container p-4';
-        pdfContent.innerHTML = `
-            <div class="text-center mb-4">
-                <h2 class="fw-bold">物品檢查表</h2>
-            </div>
+        try {
+            // 顯示加載提示
+            const loadingMessage = document.createElement('div');
+            loadingMessage.className = 'alert alert-info position-fixed top-50 start-50 translate-middle';
+            loadingMessage.style.zIndex = '9999';
+            loadingMessage.innerHTML = '<div class="d-flex align-items-center"><div class="spinner-border spinner-border-sm me-2" role="status"></div>正在生成 PDF，請稍候...</div>';
+            document.body.appendChild(loadingMessage);
             
-            <div class="mb-4 p-3" style="border: 1px solid #dee2e6; border-radius: 8px;">
-                <h4 class="mb-3">基本資訊</h4>
-                <div class="row">
-                    <div class="col-6">
-                        <p><strong>日期：</strong> ${formData.date}</p>
-                    </div>
-                    <div class="col-6">
-                        <p><strong>地點：</strong> ${formData.location}</p>
-                    </div>
-                </div>
-            </div>
+            // 先保存當前數據
+            const formData = saveFormData();
             
-            <div class="mb-4 p-3" style="border: 1px solid #dee2e6; border-radius: 8px;">
-                <h4 class="mb-3">物品資料</h4>
-                <div class="table-responsive">
-                    <table class="table table-bordered">
-                        <thead class="table-light">
-                            <tr>
-                                <th>物品名稱</th>
-                                <th>數量</th>
-                                <th>狀況</th>
-                                <th>備註</th>
-                                <th>照片</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            ${formData.items.map(item => `
-                                <tr>
-                                    <td>${item.name || '-'}</td>
-                                    <td>${item.quantity || '-'}</td>
-                                    <td>${item.condition || '-'}</td>
-                                    <td>${item.notes || '-'}</td>
-                                    <td style="text-align: center;">${item.photo ? `<img src="${item.photo}" style="max-width: 100px; max-height: 100px; border-radius: 4px;">` : '-'}</td>
-                                </tr>
-                            `).join('')}
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-            
-            ${formData.additionalNotes ? `
-                <div class="mb-4 p-3" style="border: 1px solid #dee2e6; border-radius: 8px;">
-                    <h4 class="mb-3">其他備註</h4>
-                    <p>${formData.additionalNotes}</p>
-                </div>
-            ` : ''}
-            
-            <div class="mb-4 p-3" style="border: 1px solid #dee2e6; border-radius: 8px;">
-                <h4 class="mb-3">雙方簽名</h4>
-                <div class="row">
-                    <div class="col-6 mb-3">
-                        <p><strong>檢查人：</strong></p>
-                        <div style="border: 1px solid #dee2e6; padding: 10px; border-radius: 4px; min-height: 150px;">
-                            <img src="${formData.inspectorSignature}" style="max-width: 100%; max-height: 150px;">
-                        </div>
-                    </div>
-                    <div class="col-6 mb-3">
-                        <p><strong>確認人：</strong></p>
-                        <div style="border: 1px solid #dee2e6; padding: 10px; border-radius: 4px; min-height: 150px;">
-                            <img src="${formData.confirmSignature}" style="max-width: 100%; max-height: 150px;">
-                        </div>
-                    </div>
-                </div>
-            </div>
-            
-            <div class="text-center mt-5 pt-3" style="border-top: 1px solid #dee2e6;">
-                <p class="text-muted small">檢查日期：${formData.date} | 地點：${formData.location}</p>
-            </div>
-        `;
-        
-        // 將 pdfContent 添加到 body 中以便 html2canvas 可以捕獲
-        document.body.appendChild(pdfContent);
-        pdfContent.style.position = 'absolute';
-        pdfContent.style.top = '-9999px';
-        pdfContent.style.width = '800px';
-        pdfContent.style.backgroundColor = '#ffffff';
-        
-        // 使用 html2canvas 和 jsPDF 生成 PDF
-        const { jsPDF } = window.jspdf;
-        const doc = new jsPDF('p', 'mm', 'a4');
-        
-        html2canvas(pdfContent, {
-            scale: 2, // 提高清晰度
-            useCORS: true, // 允許加載跨域圖片
-            logging: false,
-            backgroundColor: '#ffffff'
-        }).then(canvas => {
-            const imgData = canvas.toDataURL('image/jpeg', 1.0);
-            const imgWidth = 210; // A4 寬度 (mm)
-            const pageHeight = 297; // A4 高度 (mm)
-            const imgHeight = canvas.height * imgWidth / canvas.width;
-            let heightLeft = imgHeight;
-            let position = 0;
-            
-            doc.addImage(imgData, 'JPEG', 0, position, imgWidth, imgHeight);
-            heightLeft -= pageHeight;
-            
-            // 如果內容超過一頁，添加新頁面
-            while (heightLeft > 0) {
-                position = heightLeft - imgHeight;
-                doc.addPage();
-                doc.addImage(imgData, 'JPEG', 0, position, imgWidth, imgHeight);
-                heightLeft -= pageHeight;
+            // 檢查是否有簽名
+            if (!formData.inspectorSignature || !formData.confirmSignature) {
+                document.body.removeChild(loadingMessage);
+                alert('請確保雙方都已完成簽名！');
+                return;
             }
             
-            // 下載 PDF
-            doc.save(`物品檢查表_${formData.date}.pdf`);
+            // 檢測是否為移動設備
+            const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+            console.log('設備類型：', isMobile ? '移動設備' : '桌面設備');
             
-            // 移除臨時 DOM 元素
-            document.body.removeChild(pdfContent);
-        });
+            // 創建 PDF 內容的 HTML
+            const pdfContent = document.createElement('div');
+            pdfContent.className = 'container p-4';
+            pdfContent.style.backgroundColor = '#ffffff';
+            pdfContent.style.width = isMobile ? '100%' : '800px';
+            pdfContent.style.maxWidth = '800px';
+            pdfContent.style.margin = '0 auto';
+            pdfContent.style.padding = '15px';
+            pdfContent.style.position = 'absolute';
+            pdfContent.style.left = '-9999px';
+            pdfContent.style.top = '0';
+            
+            // 簡化照片處理，避免在移動設備上處理過多圖像
+            const processedItems = formData.items.map(item => {
+                // 如果是移動設備，且有照片，則縮小照片尺寸
+                if (isMobile && item.photo) {
+                    return {
+                        ...item,
+                        photo: item.photo // 在移動設備上保留照片但不做處理
+                    };
+                }
+                return item;
+            });
+            
+            // 設置 HTML 內容
+            pdfContent.innerHTML = `
+                <div class="text-center mb-4">
+                    <h2 class="fw-bold">物品檢查表</h2>
+                </div>
+                
+                <div class="mb-4 p-3" style="border: 1px solid #dee2e6; border-radius: 8px;">
+                    <h4 class="mb-3">基本資訊</h4>
+                    <div class="row">
+                        <div class="col-6">
+                            <p><strong>日期：</strong> ${formData.date}</p>
+                        </div>
+                        <div class="col-6">
+                            <p><strong>地點：</strong> ${formData.location}</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="mb-4 p-3" style="border: 1px solid #dee2e6; border-radius: 8px;">
+                    <h4 class="mb-3">物品資料</h4>
+                    <div class="table-responsive">
+                        <table class="table table-bordered">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>物品名稱</th>
+                                    <th>數量</th>
+                                    <th>狀況</th>
+                                    <th>備註</th>
+                                    ${isMobile ? '' : '<th>照片</th>'}
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${processedItems.map(item => `
+                                    <tr>
+                                        <td>${item.name || '-'}</td>
+                                        <td>${item.quantity || '-'}</td>
+                                        <td>${item.condition || '-'}</td>
+                                        <td>${item.notes || '-'}</td>
+                                        ${isMobile ? '' : `<td style="text-align: center;">${item.photo ? `<img src="${item.photo}" style="max-width: 80px; max-height: 80px; border-radius: 4px;">` : '-'}</td>`}
+                                    </tr>
+                                `).join('')}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                
+                ${formData.additionalNotes ? `
+                    <div class="mb-4 p-3" style="border: 1px solid #dee2e6; border-radius: 8px;">
+                        <h4 class="mb-3">其他備註</h4>
+                        <p>${formData.additionalNotes}</p>
+                    </div>
+                ` : ''}
+                
+                <div class="mb-4 p-3" style="border: 1px solid #dee2e6; border-radius: 8px;">
+                    <h4 class="mb-3">雙方簽名</h4>
+                    <div class="row">
+                        <div class="col-6 mb-3">
+                            <p><strong>檢查人：</strong></p>
+                            <div style="border: 1px solid #dee2e6; padding: 10px; border-radius: 4px; min-height: 100px;">
+                                <img src="${formData.inspectorSignature}" style="max-width: 100%; max-height: 100px;">
+                            </div>
+                        </div>
+                        <div class="col-6 mb-3">
+                            <p><strong>確認人：</strong></p>
+                            <div style="border: 1px solid #dee2e6; padding: 10px; border-radius: 4px; min-height: 100px;">
+                                <img src="${formData.confirmSignature}" style="max-width: 100%; max-height: 100px;">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="text-center mt-3 pt-2" style="border-top: 1px solid #dee2e6;">
+                    <p class="text-muted small">檢查日期：${formData.date} | 地點：${formData.location}</p>
+                </div>
+            `;
+            
+            // 將 pdfContent 添加到 body 中以便 html2canvas 可以捕獲
+            document.body.appendChild(pdfContent);
+            
+            // 使用 html2canvas 和 jsPDF 生成 PDF
+            const { jsPDF } = window.jspdf;
+            
+            // 針對移動設備調整設置
+            const canvasOptions = {
+                scale: isMobile ? 1 : 2, // 移動設備降低縮放比例以減少內存使用
+                useCORS: true, // 允許加載跨域圖片
+                allowTaint: true, // 允許污染 canvas
+                logging: false,
+                backgroundColor: '#ffffff',
+                onclone: function(clonedDoc) {
+                    // 確保克隆的 DOM 中的圖片已完全加載
+                    const images = clonedDoc.getElementsByTagName('img');
+                    for (let i = 0; i < images.length; i++) {
+                        images[i].crossOrigin = 'anonymous';
+                    }
+                }
+            };
+            
+            // 分段處理 PDF 生成，避免在移動設備上一次處理過多內容
+            html2canvas(pdfContent, canvasOptions).then(canvas => {
+                try {
+                    // 創建 PDF 文檔
+                    const doc = new jsPDF('p', 'mm', 'a4');
+                    
+                    // 將 canvas 轉換為圖像
+                    const imgData = canvas.toDataURL('image/jpeg', isMobile ? 0.7 : 0.9); // 移動設備降低圖像質量
+                    const imgWidth = 210; // A4 寬度 (mm)
+                    const pageHeight = 297; // A4 高度 (mm)
+                    const imgHeight = canvas.height * imgWidth / canvas.width;
+                    
+                    // 添加圖像到 PDF
+                    doc.addImage(imgData, 'JPEG', 0, 0, imgWidth, imgHeight);
+                    
+                    // 如果內容超過一頁，添加新頁面
+                    if (imgHeight > pageHeight) {
+                        let heightLeft = imgHeight - pageHeight;
+                        let position = -pageHeight;
+                        
+                        while (heightLeft > 0) {
+                            position = position - pageHeight;
+                            doc.addPage();
+                            doc.addImage(imgData, 'JPEG', 0, position, imgWidth, imgHeight);
+                            heightLeft -= pageHeight;
+                        }
+                    }
+                    
+                    // 在移動設備上使用 blob 方式打開 PDF，而不是直接下載
+                    if (isMobile) {
+                        const pdfBlob = doc.output('blob');
+                        const pdfUrl = URL.createObjectURL(pdfBlob);
+                        
+                        // 移除加載提示和臨時 DOM 元素
+                        document.body.removeChild(loadingMessage);
+                        document.body.removeChild(pdfContent);
+                        
+                        // 在新窗口中打開 PDF
+                        window.open(pdfUrl, '_blank');
+                    } else {
+                        // 桌面設備直接下載 PDF
+                        doc.save(`物品檢查表_${formData.date}.pdf`);
+                        
+                        // 移除加載提示和臨時 DOM 元素
+                        document.body.removeChild(loadingMessage);
+                        document.body.removeChild(pdfContent);
+                    }
+                } catch (error) {
+                    console.error('生成 PDF 時發生錯誤:', error);
+                    document.body.removeChild(loadingMessage);
+                    document.body.removeChild(pdfContent);
+                    alert('生成 PDF 時發生錯誤: ' + error.message);
+                }
+            }).catch(error => {
+                console.error('轉換 HTML 為 Canvas 時發生錯誤:', error);
+                document.body.removeChild(loadingMessage);
+                document.body.removeChild(pdfContent);
+                alert('生成 PDF 時發生錯誤: ' + error.message);
+            });
+        } catch (error) {
+            console.error('生成 PDF 過程中發生錯誤:', error);
+            alert('生成 PDF 時發生錯誤: ' + error.message);
+            // 確保加載提示被移除
+            const loadingMessage = document.querySelector('.alert.alert-info');
+            if (loadingMessage) {
+                document.body.removeChild(loadingMessage);
+            }
+        }
     }
     
     // 添加新物品行
